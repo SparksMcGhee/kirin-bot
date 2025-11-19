@@ -1,0 +1,34 @@
+---
+- name: Update Kiran Bot MVP
+  hosts: kirin_servers
+  become: yes
+  vars:
+    project_dir: /opt/kirin-bot
+
+  tasks:
+    - name: Pull latest code
+      git:
+        repo: "{{ git_repo_url | default('') }}"
+        dest: "{{ project_dir }}"
+        version: "{{ git_branch | default('main') }}"
+      when: git_repo_url is defined
+
+    - name: Pull latest Docker images
+      docker_compose:
+        project_src: "{{ project_dir }}/mvp"
+        pull: yes
+        files:
+          - "{{ project_dir }}/mvp/docker-compose.yml"
+
+    - name: Rebuild and restart services
+      docker_compose:
+        project_src: "{{ project_dir }}/mvp"
+        build: yes
+        state: started
+        files:
+          - "{{ project_dir }}/mvp/docker-compose.yml"
+
+    - name: Display summary file location
+      debug:
+        msg: "Summary file should be available at {{ project_dir }}/output/"
+

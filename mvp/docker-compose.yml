@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./services/app/Dockerfile
+    container_name: kirin-bot-mvp
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL_IDS=${SLACK_CHANNEL_IDS}
+      - SLACK_LOOKBACK_HOURS=${SLACK_LOOKBACK_HOURS:-24}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/output}
+      - OUTPUT_FILENAME=${OUTPUT_FILENAME:-slack-summary.txt}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      - ollama
+    restart: "no"  # Single-run execution, don't restart
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kirin-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+
