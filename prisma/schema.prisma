@@ -1,0 +1,242 @@
+// Kirin Bot - Database Schema
+// Manages collector configs, processor settings, summaries, and user preferences
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+// ============================================
+// COLLECTORS CONFIGURATION
+// ============================================
+
+model Collector {
+  id              String   @id @default(uuid())
+  name            String   @unique // 'slack', 'signal', 'twitter'
+  displayName     String   // 'Slack Collector', 'Signal Collector'
+  enabled         Boolean  @default(true)
+  schedulePattern String   @default("*/30 * * * *") // cron pattern
+  concurrency     Int      @default(1)
+  rateLimitMax    Int      @default(10) // max jobs per duration
+  rateLimitMs     Int      @default(60000) // duration in ms
+  
+  // Settings as JSON for flexibility
+  settings        Json     @default("{}")
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  jobs            CollectorJob[]
+  
+  @@map("collectors")
+}
+
+model CollectorJob {
+  id              String   @id @default(uuid())
+  collectorId     String
+  collector       Collector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  
+  // Job status
+  status          JobStatus @default(WAITING)
+  priority        Int       @default(0)
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3)
+  
+  // Job data
+  data            Json     // Input data for the job
+  result          Json?    // Result data (if completed)
+  error           String?  @db.Text // Error message (if failed)
+  
+  // Timing
+  scheduledAt     DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  failedAt        DateTime?
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("collector_jobs")
+  @@index([collectorId, status])
+  @@index([status, scheduledAt])
+}
+
+enum JobStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+}
+
+// ============================================
+// PROCESSOR CONFIGURATION
+// ============================================
+
+model ProcessorConfig {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  
+  // LLM Configuration
+  ollamaModel     String   @default("qwen2.5:32b")
+  ollamaUrl       String   @default("http://ollama:11434")
+  temperature     Float    @default(0.7)
+  maxTokens       Int?
+  
+  // Processing Settings
+  enabled         Boolean  @default(true)
+  concurrency     Int      @default(2)
+  batchSize       Int      @default(100) // messages per batch
+  
+  // System Prompt
+  systemPrompt    String   @db.Text @default("You are a helpful assistant that summarizes conversations.")
+  userPrompts     Json     @default("{}") // Custom prompts by topic
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("processor_configs")
+}
+
+// ============================================
+// USER PREFERENCES & INTERESTS
+// ============================================
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String?  @unique
+  
+  // User interests (for filtering)
+  interests       Interest[]
+  
+  // Notification preferences
+  notifications   Json     @default("{}")
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  feedbacks       Feedback[]
+  
+  @@map("user_profiles")
+}
+
+model Interest {
+  id              String   @id @default(uuid())
+  userId          String
+  user            UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  keyword         String   // e.g., "Helen Pumpkin Pie", "stuffing"
+  weight          Float    @default(1.0) // importance weight
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("interests")
+  @@unique([userId, keyword])
+  @@index([userId, isActive])
+}
+
+// ============================================
+// CONTENT & SUMMARIES
+// ============================================
+
+model Summary {
+  id              String   @id @default(uuid())
+  source          String   // 'slack', 'signal', etc.
+  
+  // Content
+  summary         String   @db.Text
+  rawMessages     Json     // Original messages
+  messageIds      String[] // List of message IDs
+  
+  // Relevance
+  relevanceScore  Float    @default(0)
+  topics          String[] // Extracted topics
+  
+  // Metadata
+  generatedAt     DateTime @default(now())
+  userId          String?  // For multi-user support
+  
+  // Relations
+  feedbacks       Feedback[]
+  
+  @@map("summaries")
+  @@index([source, generatedAt])
+  @@index([relevanceScore])
+}
+
+model Feedback {
+  id              String   @id @default(uuid())
+  summaryId       String
+  summary         Summary  @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  user            UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  rating          FeedbackRating
+  notes           String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+  
+  @@map("feedback")
+  @@unique([summaryId, userId])
+}
+
+enum FeedbackRating {
+  RELEVANT
+  IRRELEVANT
+  MAYBE
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemConfig {
+  id              String   @id @default(uuid())
+  key             String   @unique
+  value           Json
+  description     String?  @db.Text
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("system_config")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  
+  entity          String   // 'collector', 'processor_config', etc.
+  entityId        String
+  action          String   // 'CREATE', 'UPDATE', 'DELETE'
+  
+  changes         Json     // What changed
+  userId          String?  // Who made the change
+  ipAddress       String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@map("audit_logs")
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+

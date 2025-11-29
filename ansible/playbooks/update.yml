@@ -1,0 +1,36 @@
+---
+- name: Update Kirin Bot
+  hosts: kirin_servers
+  become: yes
+  vars:
+    project_dir: /opt/kirin-bot
+
+  tasks:
+    - name: Pull latest code
+      git:
+        repo: "{{ git_repo_url | default('') }}"
+        dest: "{{ project_dir }}"
+        version: "{{ git_branch | default('main') }}"
+      when: git_repo_url is defined
+
+    - name: Stop existing services
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: absent
+
+    - name: Pull latest Docker images
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        pull: always
+        state: present
+
+    - name: Rebuild and restart services
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        build: always
+        state: present
+
+    - name: Display summary file location
+      debug:
+        msg: "Summary file should be available at {{ project_dir }}/output/"
+

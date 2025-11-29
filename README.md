@@ -1,50 +1,242 @@
-# Kiran: Ad-Block for the post-human internet 
-AI, bots, enshitification, and attention-maximizing algorythms are runing the internet. 
+# 🦄 Kirin - Self-Hosted LLM Content Filter
 
-We can't turn back time and make these things go away, but we can pit fire against fire.
+**Version 0.2.0** - Production-Ready Job Queue Architecture
 
-It's a bot, written by bots, to filter out bots. Clearly this is the best timeline. 
+Kirin is a self-hosted content filtering system that uses local LLMs to intelligently process and summarize information from multiple sources (Slack, Signal, Twitter, RSS feeds, etc.).
 
-# How does Kiran work? 
-Kiran *fights for the user*: You tell Kiran what you care about and Kiran tells you when that comes up in your socials. Full stop. No advertisers tipping the scale to sell you shit, no data scientists optimizing feeds for addiction, no evil recomendation algorythm, no enshitification, no notification blitz when your friends start blasting memes at 2am (unless of course Kiran knows you'd want in).  
+## 🏗️ Architecture
 
-Kiran *only watches*: It will never spam or bother your friends, humiliate you, or otherwise contribute to the problems it exists to solve. At-most it will reach out to you privately when it thinks you should know something. 
+Built on a modern job queue system with modular workers:
 
-You *own your data*: Data you feed Kiran is still yours. All data it collects never leaves your direct ownership and soverenty. It is designed to run entirely on self-hosted equipment. 
+- **BullMQ** - Distributed task processing with Redis
+- **PostgreSQL + pgvector** - Vector database for embeddings
+- **Prisma ORM** - Type-safe database access & migrations
+- **Ollama** - Self-hosted LLM inference
+- **Express Dashboard** - Web-based monitoring (port 666) with REST API
+- **Modular Workers** - Slack, Signal, Twitter collectors
 
-# Why does Kiran need to exist?
+### Database Configuration System
 
-For most of human history the biggest challenge we faced was getting enough food, so we wired ourselves to consume all the greese, salt, carbs, and sugar we could cram into our mouths. 
+All settings are now stored in PostgreSQL and manageable via REST API:
+- ✅ Collector configurations (schedule, rate limits, source settings)
+- ✅ Processor settings (LLM model, prompts, parameters)
+- ✅ User interests and preferences
+- ✅ Job history and audit logs
+- ✅ No redeployment needed for configuration changes
 
-Then, in an evolutionary blink of the eye the whole game changed. Developed nations didn't just have enough food, we had too much food. Suddenly the biggest killer and threat to our wellbeing wasn't starving, it was obesity, diabetes, and heart problems... suddenly success wasn't eating enough, it was eating right. 
+See [Database Configuration Guide](docs/DATABASE_CONFIGURATION.md) for details.
 
-It took us years of experimenting with scientific reserch, fad diets, public education campaigns, regulation, and finally GLP-1 drugs to functionally patch our brain's wiring.
+## 🚀 Quick Start
 
-- 
+### Prerequisites
 
-For most of human history most of humanity's brains figuratively starved. Our natural curiosity and need for knowledge and closeness was perpetually scratching for every tidbit. 
+- Docker & Docker Compose
+- Ansible (for deployment)
+- SSH access to your target server
+- Slack Bot Token (for Slack integration)
 
-Then, in an evolutionary blink of the eye the whole game changed. Suddenly the Internet allowed us to hook a firehose of all humanitites knowledge along with every banial thought and infinite volumes of empty mental junkfood directly up to our eyeballs. Suddenly becoming wise, informed, and connected wasn't simply consuming enough information.... it was consuming the right information. 
+### 1. Clone and Configure
 
-Fad information diets (cutting social media), public information campaigns, regulation, all that barely moved the needle for food, there's little reason to think it's going to move the needle here either. What about our GLP-1 moment? Part of it already happened in the 90s with Ad and Popup blocking, but now in today's internet the junkfood isn't ~next to~ the content anymore... it's ~IN~ the content. 
+```bash
+cd kirin-bot
+cp .env_example .env
+# Edit .env with your Slack token and configuration
+```
 
-That's right, fatty information isn't like a fatty hamburger. If the resturants won't sell you a low-fat info-burger then you can use filtering to leave the fat on the plate. "Thank you for the blog post sir, I'll savor it... but you can keep the Ads." 
+### 2. Configure Environment Variables
 
-Kiran exists to be the Ad-block of the post-human internet. 
+Edit `.env` file with your settings:
 
-# How does it work? Its major functionality is: 
-- Virtual Android? 
-    - Running a virtual Android phone and just using ingesting the notification feed. Potential end-run around anti-bot detection.
-    - Not all modules will need it. 
-- Pluggable modules for ingesting data from various feeds 
-- NodeJS engine for processing posts and checking interst allignment in real-time 
-- Relational database storing memories of things it's user wants and doesn't want
-- Dream system for processing user instructions and memories into interests 
-- GUI Interface (web app which can be added home screens)
+```env
+SLACK_BOT_TOKEN=xoxb-your-token-here
+SLACK_CHANNEL_IDS=C1234567890,C0987654321
+SLACK_LOOKBACK_HOURS=24
 
-# Why "Kiran"? 
-Kiran means :giraffe: in Japanese! 
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=qwen2.5:32b
 
-### Image: giraffe looking over fence 
+REDIS_URL=redis://redis:6379
+DATABASE_URL=postgresql://kirin:password@postgres:5432/kirin
 
-It also means "ray of light" in sanskrit and "dark-haired" in Gaelic.
+DASHBOARD_PORT=666
+```
+
+### 3. Run with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+### 4. Access Dashboard
+
+Visit `http://localhost:666` to view the dashboard and monitor queue status.
+
+## 📦 Deployment
+
+### Deploy to Server
+
+```bash
+cd ansible
+./ansible-playbook.sh playbooks/deploy.yml
+```
+
+### Update Deployment
+
+```bash
+cd ansible
+./ansible-playbook.sh playbooks/update.yml
+```
+
+### Verify Deployment
+
+```bash
+cd scripts
+./verify-deployment.sh
+```
+
+## 📊 Monitoring
+
+- **Dashboard**: `http://your-server:666`
+- **Queue Stats API**: `http://your-server:666/api/queues`
+- **Health Check**: `http://your-server:666/api/health`
+
+View worker logs:
+```bash
+docker logs kirin-collector-slack -f
+docker logs kirin-processor -f
+docker logs kirin-output -f
+```
+
+## 🔧 Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SLACK_BOT_TOKEN` | Slack Bot User OAuth Token | Required |
+| `SLACK_CHANNEL_IDS` | Comma-separated channel IDs | Required |
+| `SLACK_LOOKBACK_HOURS` | Hours of history to fetch | `24` |
+| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://ollama:11434` |
+| `OLLAMA_MODEL` | LLM model to use | `qwen2.5:32b` |
+| `REDIS_URL` | Redis connection string | `redis://redis:6379` |
+| `DATABASE_URL` | PostgreSQL connection | `postgresql://kirin:password@postgres:5432/kirin` |
+| `DASHBOARD_PORT` | Dashboard web port | `666` |
+| `OUTPUT_DIR` | Directory for summary files | `/app/output` |
+| `LOG_LEVEL` | Logging verbosity | `info` |
+
+## 🎯 Recommended LLM Models
+
+With high memory capacity, you can run larger models:
+
+**Recommended for summarization:**
+- `qwen2.5:32b` - Excellent quality, ~18GB VRAM (default)
+- `llama3.1:70b` - Maximum quality, ~40GB VRAM
+- `llama3.1:8b` - Fast and efficient, ~4.7GB VRAM
+
+**Smaller/faster options:**
+- `llama3.2:3b` - Good quality, very fast, ~2GB VRAM
+- `mistral:7b` - Great alternative, ~4.1GB VRAM
+
+## 📚 Documentation
+
+- [Full Architecture Guide](README_v2.md) - Detailed architecture and design
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) - Step-by-step deployment
+- [Deployment Success Report](DEPLOYMENT_SUCCESS_v0.2.0.md) - Latest deployment details
+- [Change Log](CHANGES.md) - Version history
+- [LangChain Integration Plan](docs/LANGCHAIN_INTEGRATION.md) - Future enhancements
+
+## 🏗️ Project Structure
+
+```
+kirin-bot/
+├── src/              # TypeScript source code
+│   ├── queue/        # BullMQ queue definitions
+│   ├── workers/      # Collector, processor, output workers
+│   ├── slack/        # Slack API client
+│   ├── models/       # LLM clients (Ollama)
+│   └── utils/        # Logger, helpers
+├── services/         # Docker service definitions
+│   ├── collectors/   # Collector Dockerfiles
+│   ├── processor/    # Processor Dockerfile
+│   ├── output/       # Output Dockerfile
+│   └── dashboard/    # Express dashboard
+├── ansible/          # Deployment automation
+└── docker-compose.yml # Service orchestration
+```
+
+## 🔮 Roadmap
+
+### v0.3.0 - LangChain Integration
+- RAG with pgvector
+- Prompt versioning
+- Topic extraction
+- Relevance scoring
+
+### v0.4.0 - Multi-User Support
+- User authentication
+- Per-user filtering preferences
+- Feedback loops
+
+### v0.5.0 - Additional Sources
+- Signal collector
+- Twitter/X collector
+- RSS feed collector
+
+## 🛠️ Development
+
+### Local Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Run specific workers
+npm run worker:slack
+```
+
+### Project Commands
+
+```bash
+npm run build      # Build TypeScript
+npm run dev        # Run in development mode
+npm start          # Run main app (legacy)
+npm run lint       # Lint code
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **"not_in_channel" error**
+   - Invite your bot to the Slack channels
+
+2. **Ollama connection errors**
+   - Verify Ollama is running: `docker logs kirin-ollama`
+
+3. **Queue not processing**
+   - Check Redis: `docker logs kirin-redis`
+   - Check worker logs: `docker logs kirin-collector-slack`
+
+### View All Logs
+
+```bash
+docker-compose logs -f
+```
+
+## 🔒 Security
+
+- **Slack Token**: Keep `.env` secure and never commit it
+- **Local Processing**: All LLM processing happens locally
+- **No Cloud**: No data leaves your infrastructure
+- **Network Isolation**: Services communicate via Docker network
+
+## 📄 License
+
+MIT - See [LICENSE](LICENSE) for details
+
+---
+
+**Built for filtering signal from noise** 🦄
+
+*Dashboard: http://your-server:666*

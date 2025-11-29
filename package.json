@@ -1,0 +1,54 @@
+{
+  "name": "kirin-bot",
+  "version": "0.2.0",
+  "description": "Kirin: Self-hosted LLM-powered content filtering with job queue architecture",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "worker:slack": "ts-node src/workers/slack-worker.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "lint": "eslint src/**/*.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "slack",
+    "summarization",
+    "llm",
+    "ollama",
+    "self-hosted",
+    "job-queue",
+    "bullmq"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/web-api": "^7.0.0",
+    "dotenv": "^16.3.1",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.2",
+    "langchain": "^0.1.0",
+    "@langchain/community": "^0.0.40",
+    "pg": "^8.11.3",
+    "@prisma/client": "^5.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "prisma": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+
+

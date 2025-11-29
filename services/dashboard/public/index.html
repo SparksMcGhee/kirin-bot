@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 1rem;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .collector-item {
+            padding: 1rem;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .collector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .collector-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .interests-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .interest-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .queue-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .queue-table th,
+        .queue-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .queue-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .queue-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦄 Kirin Dashboard</h1>
+            <p class="subtitle">Self-hosted LLM-powered content filtering</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="tab" onclick="showTab('collectors')">🔧 Collectors</button>
+            <button class="tab" onclick="showTab('processor')">⚙️ Processor</button>
+            <button class="tab" onclick="showTab('interests')">🎯 Interests</button>
+            <button class="tab" onclick="showTab('queues')">📋 Queues</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <div class="grid">
+                <div class="stat-card">
+                    <div class="stat-label">Active Collectors</div>
+                    <div class="stat-value" id="stat-collectors">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Jobs</div>
+                    <div class="stat-value" id="stat-jobs">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Interests</div>
+                    <div class="stat-value" id="stat-interests">-</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <div class="action-buttons">
+                    <button onclick="triggerAllCollectors()">▶️ Run All Collectors</button>
+                    <button onclick="showTab('processor')" class="btn-secondary">⚙️ Update Prompts</button>
+                    <button onclick="showTab('interests')" class="btn-secondary">🎯 Manage Interests</button>
+                    <button onclick="location.reload()" class="btn-secondary">🔄 Refresh Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Collectors Tab -->
+        <div id="collectors-tab" class="tab-content">
+            <div class="card">
+                <h2>Collector Management</h2>
+                <div id="message-collectors" class="message"></div>
+                <div id="collectors-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading collectors...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Processor Tab -->
+        <div id="processor-tab" class="tab-content">
+            <div class="card">
+                <h2>Processor Configuration</h2>
+                <div id="message-processor" class="message"></div>
+                <form id="processor-form" onsubmit="updateProcessor(event)">
+                    <div class="form-group">
+                        <label for="ollama-model">LLM Model</label>
+                        <input type="text" id="ollama-model" placeholder="qwen2.5:32b" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="temperature">Temperature (0.0 - 1.0)</label>
+                        <input type="number" id="temperature" min="0" max="1" step="0.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="concurrency">Concurrency</label>
+                        <input type="number" id="concurrency" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="system-prompt">System Prompt</label>
+                        <textarea id="system-prompt" required></textarea>
+                    </div>
+                    
+                    <button type="submit">💾 Save Processor Configuration</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Interests Tab -->
+        <div id="interests-tab" class="tab-content">
+            <div class="card">
+                <h2>User Interests</h2>
+                <div id="message-interests" class="message"></div>
+                
+                <form id="interest-form" onsubmit="addInterest(event)">
+                    <div class="form-group">
+                        <label for="keyword">Keyword</label>
+                        <input type="text" id="keyword" placeholder="e.g., machine learning" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (importance)</label>
+                        <input type="number" id="weight" min="0.1" max="5" step="0.1" value="1.0" required>
+                    </div>
+                    
+                    <button type="submit">➕ Add Interest</button>
+                </form>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Current Interests</h3>
+                <ul id="interests-list" class="interests-list">
+                    <li class="loading">Loading interests...</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Queues Tab -->
+        <div id="queues-tab" class="tab-content">
+            <div class="card">
+                <h2>Job Queues Status</h2>
+                <table class="queue-table" id="queues-table">
+                    <thead>
+                        <tr>
+                            <th>Queue Name</th>
+                            <th>Waiting</th>
+                            <th>Active</th>
+                            <th>Completed</th>
+                            <th>Failed</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="loading">Loading queue data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Load data for the tab
+            if (tabName === 'collectors') loadCollectors();
+            if (tabName === 'processor') loadProcessor();
+            if (tabName === 'interests') loadInterests();
+            if (tabName === 'queues') loadQueues();
+        }
+        
+        // Show message
+        function showMessage(elementId, text, isError = false) {
+            const msg = document.getElementById(elementId);
+            msg.textContent = text;
+            msg.className = 'message show ' + (isError ? 'message-error' : 'message-success');
+            setTimeout(() => msg.classList.remove('show'), 5000);
+        }
+        
+        // Load collectors
+        async function loadCollectors() {
+            try {
+                const response = await fetch('/api/collectors');
+                const collectors = await response.json();
+                
+                const html = collectors.map(c => `
+                    <div class="collector-item">
+                        <div class="collector-header">
+                            <div>
+                                <div class="collector-name">${c.displayName}</div>
+                                <small>Schedule: ${c.schedulePattern}</small>
+                            </div>
+                            <div>
+                                <span class="badge ${c.enabled ? 'badge-success' : 'badge-danger'}">
+                                    ${c.enabled ? '✓ Enabled' : '✗ Disabled'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button onclick="toggleCollector('${c.name}', ${!c.enabled})">
+                                ${c.enabled ? '⏸️ Disable' : '▶️ Enable'}
+                            </button>
+                            <button onclick="triggerCollector('${c.name}')" class="btn-success" ${!c.enabled ? 'disabled' : ''}>
+                                🚀 Trigger Now
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('collectors-list').innerHTML = html;
+            } catch (error) {
+                document.getElementById('collectors-list').innerHTML = '<p>Error loading collectors</p>';
+            }
+        }
+        
+        // Toggle collector
+        async function toggleCollector(name, enable) {
+            try {
+                const response = await fetch(`/api/collectors/${name}/toggle`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                showMessage('message-collectors', result.message);
+                loadCollectors();
+                loadOverview();
+            } catch (error) {
+                showMessage('message-collectors', 'Error toggling collector', true);
+            }
+        }
+        
+        // Trigger collector
+        async function triggerCollector(name) {
+            try {
+                const response = await fetch(`/api/collectors/${name}/trigger`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                showMessage('message-collectors', result.message || 'Collector job queued successfully!');
+                setTimeout(loadQueues, 1000);
+            } catch (error) {
+                showMessage('message-collectors', 'Error triggering collector', true);
+            }
+        }
+        
+        // Trigger all collectors
+        async function triggerAllCollectors() {
+            const collectors = ['slack', 'signal', 'twitter'];
+            let success = 0;
+            for (const name of collectors) {
+                try {
+                    await fetch(`/api/collectors/${name}/trigger`, { method: 'POST' });
+                    success++;
+                } catch (error) {
+                    console.error(`Error triggering ${name}:`, error);
+                }
+            }
+            alert(`Triggered ${success} collector(s)`);
+            setTimeout(loadQueues, 1000);
+        }
+        
+        // Load processor config
+        async function loadProcessor() {
+            try {
+                const response = await fetch('/api/processor/config');
+                const config = await response.json();
+                
+                document.getElementById('ollama-model').value = config.ollamaModel;
+                document.getElementById('temperature').value = config.temperature;
+                document.getElementById('concurrency').value = config.concurrency;
+                document.getElementById('system-prompt').value = config.systemPrompt;
+            } catch (error) {
+                showMessage('message-processor', 'Error loading processor config', true);
+            }
+        }
+        
+        // Update processor
+        async function updateProcessor(event) {
+            event.preventDefault();
+            
+            const data = {
+                ollamaModel: document.getElementById('ollama-model').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                concurrency: parseInt(document.getElementById('concurrency').value),
+                systemPrompt: document.getElementById('system-prompt').value
+            };
+            
+            try {
+                const response = await fetch('/api/processor/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showMessage('message-processor', 'Processor configuration updated successfully!');
+                } else {
+                    throw new Error('Failed to update');
+                }
+            } catch (error) {
+                showMessage('message-processor', 'Error updating processor config', true);
+            }
+        }
+        
+        // Load interests
+        async function loadInterests() {
+            try {
+                const response = await fetch('/api/interests');
+                const interests = await response.json();
+                
+                const html = interests.map(i => `
+                    <li class="interest-item">
+                        <div>
+                            <strong>${i.keyword}</strong>
+                            <small style="margin-left: 1rem; opacity: 0.7;">Weight: ${i.weight}</small>
+                        </div>
+                        <button class="btn-danger" onclick="deleteInterest('${i.id}')">🗑️ Delete</button>
+                    </li>
+                `).join('');
+                
+                document.getElementById('interests-list').innerHTML = html || '<li>No interests yet</li>';
+            } catch (error) {
+                document.getElementById('interests-list').innerHTML = '<li>Error loading interests</li>';
+            }
+        }
+        
+        // Add interest
+        async function addInterest(event) {
+            event.preventDefault();
+            
+            const data = {
+                keyword: document.getElementById('keyword').value,
+                weight: parseFloat(document.getElementById('weight').value)
+            };
+            
+            try {
+                const response = await fetch('/api/interests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showMessage('message-interests', 'Interest added successfully!');
+                    document.getElementById('interest-form').reset();
+                    document.getElementById('weight').value = '1.0';
+                    loadInterests();
+                    loadOverview();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+            } catch (error) {
+                showMessage('message-interests', error.message || 'Error adding interest', true);
+            }
+        }
+        
+        // Delete interest
+        async function deleteInterest(id) {
+            if (!confirm('Are you sure you want to delete this interest?')) return;
+            
+            try {
+                const response = await fetch(`/api/interests/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('message-interests', 'Interest deleted successfully!');
+                    loadInterests();
+                    loadOverview();
+                } else {
+                    throw new Error('Failed to delete');
+                }
+            } catch (error) {
+                showMessage('message-interests', 'Error deleting interest', true);
+            }
+        }
+        
+        // Load queues
+        async function loadQueues() {
+            try {
+                const response = await fetch('/api/queues');
+                const data = await response.json();
+                
+                const html = data.queues.map(q => `
+                    <tr>
+                        <td>${q.name}</td>
+                        <td>${q.waiting}</td>
+                        <td>${q.active}</td>
+                        <td>${q.completed}</td>
+                        <td>${q.failed}</td>
+                        <td><strong>${q.total}</strong></td>
+                    </tr>
+                `).join('');
+                
+                document.querySelector('#queues-table tbody').innerHTML = html;
+            } catch (error) {
+                document.querySelector('#queues-table tbody').innerHTML = '<tr><td colspan="6">Error loading queues</td></tr>';
+            }
+        }
+        
+        // Load overview stats
+        async function loadOverview() {
+            try {
+                const [collectors, interests, queues] = await Promise.all([
+                    fetch('/api/collectors').then(r => r.json()),
+                    fetch('/api/interests').then(r => r.json()),
+                    fetch('/api/queues').then(r => r.json())
+                ]);
+                
+                document.getElementById('stat-collectors').textContent = 
+                    collectors.filter(c => c.enabled).length;
+                document.getElementById('stat-interests').textContent = 
+                    interests.length;
+                document.getElementById('stat-jobs').textContent = 
+                    queues.queues.reduce((sum, q) => sum + q.total, 0);
+            } catch (error) {
+                console.error('Error loading overview:', error);
+            }
+        }
+        
+        // Auto-refresh queues every 10 seconds
+        setInterval(() => {
+            if (document.getElementById('queues-tab').classList.contains('active')) {
+                loadQueues();
+            }
+            if (document.getElementById('overview-tab').classList.contains('active')) {
+                loadOverview();
+            }
+        }, 10000);
+        
+        // Initial load
+        loadCollectors();
+        loadOverview();
+    </script>
+</body>
+</html>
+

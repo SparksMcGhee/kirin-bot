@@ -1,0 +1,81 @@
+---
+- name: Deploy Kirin Bot
+  hosts: kirin_servers
+  become: yes
+  vars:
+    project_dir: /opt/kirin-bot
+
+  roles:
+    - docker
+
+  tasks:
+    - name: Ensure project directory exists
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy project files
+      synchronize:
+        src: "{{ playbook_dir }}/../../"
+        dest: "{{ project_dir }}"
+        delete: no
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=dist"
+          - "--exclude=/output"
+          - "--exclude=ansible"
+          - "--exclude=*.log"
+
+    - name: Ensure .env file exists
+      stat:
+        path: "{{ project_dir }}/.env"
+      register: env_file
+
+    - name: Fail if .env file is missing
+      fail:
+        msg: ".env file is required. Copy .env.example to .env and configure it."
+      when: not env_file.stat.exists
+
+    - name: Create output directory
+      file:
+        path: "{{ project_dir }}/output"
+        state: directory
+        mode: '0755'
+
+    - name: Pull latest Docker images
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        pull: always
+        state: present
+
+    - name: Build and start services
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        build: always
+        state: present
+
+    - name: Wait for database initialization
+      shell: docker logs kirin-db-init 2>&1 | grep -q "Database initialization complete"
+      register: db_init_result
+      until: db_init_result.rc == 0
+      retries: 30
+      delay: 10
+      ignore_errors: yes
+
+    - name: Check if database initialization succeeded
+      shell: docker inspect kirin-db-init --format='{{ '{{' }}.State.ExitCode{{ '}}' }}'
+      register: db_init_exit_code
+      failed_when: db_init_exit_code.stdout != "0"
+
+    - name: Display deployment info
+      debug:
+        msg:
+          - "✅ Kirin Bot deployed successfully!"
+          - "📊 Dashboard: http://{{ ansible_host }}:{{ lookup('env', 'DASHBOARD_PORT') | default('666') }}"
+          - "🔧 Collectors API: http://{{ ansible_host }}:{{ lookup('env', 'DASHBOARD_PORT') | default('666') }}/api/collectors"
+          - "📝 Queue Stats: http://{{ ansible_host }}:{{ lookup('env', 'DASHBOARD_PORT') | default('666') }}/api/queues"
+          - "💾 Database initialized and seeded"
+          - "📁 Output directory: {{ project_dir }}/output/"
+

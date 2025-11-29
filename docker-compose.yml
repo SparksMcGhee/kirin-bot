@@ -1,0 +1,184 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    container_name: kirin-redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: kirin-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-kirin}
+      - POSTGRES_USER=${POSTGRES_USER:-kirin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kirin_dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kirin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kirin-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+
+  # Database initialization (migrations + seed)
+  db-init:
+    build:
+      context: .
+      dockerfile: ./services/db-init/Dockerfile
+    container_name: kirin-db-init
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kirin}:${POSTGRES_PASSWORD:-kirin_dev_password}@postgres:5432/${POSTGRES_DB:-kirin}
+      - POSTGRES_USER=${POSTGRES_USER:-kirin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-kirin_dev_password}
+      - POSTGRES_DB=${POSTGRES_DB:-kirin}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL_IDS=${SLACK_CHANNEL_IDS}
+      - SLACK_LOOKBACK_HOURS=${SLACK_LOOKBACK_HOURS:-24}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:32b}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - DASHBOARD_PORT=${DASHBOARD_PORT:-666}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/output}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"  # Run once on startup
+
+  # Kirin Dashboard (Express + Settings API)
+  dashboard:
+    build:
+      context: .
+      dockerfile: ./services/dashboard/Dockerfile
+    container_name: kirin-dashboard
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kirin}:${POSTGRES_PASSWORD:-kirin_dev_password}@postgres:5432/${POSTGRES_DB:-kirin}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - DASHBOARD_PORT=${DASHBOARD_PORT:-666}
+      - NODE_ENV=production
+    ports:
+      - "${DASHBOARD_PORT:-666}:${DASHBOARD_PORT:-666}"
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Collector Workers
+  collector-slack:
+    build:
+      context: .
+      dockerfile: ./services/collectors/slack/Dockerfile
+    container_name: kirin-collector-slack
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL_IDS=${SLACK_CHANNEL_IDS}
+      - SLACK_LOOKBACK_HOURS=${SLACK_LOOKBACK_HOURS:-24}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kirin}:${POSTGRES_PASSWORD:-kirin_dev_password}@postgres:5432/${POSTGRES_DB:-kirin}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+
+  # Processor Worker
+  processor:
+    build:
+      context: .
+      dockerfile: ./services/processor/Dockerfile
+    container_name: kirin-processor
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-kirin}:${POSTGRES_PASSWORD:-kirin_dev_password}@postgres:5432/${POSTGRES_DB:-kirin}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+
+  # Output Worker
+  output:
+    build:
+      context: .
+      dockerfile: ./services/output/Dockerfile
+    container_name: kirin-output
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/output}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # Legacy app (v0.1.0 - keeping for compatibility)
+  app:
+    build:
+      context: .
+      dockerfile: ./services/app/Dockerfile
+    container_name: kirin-bot-legacy
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL_IDS=${SLACK_CHANNEL_IDS}
+      - SLACK_LOOKBACK_HOURS=${SLACK_LOOKBACK_HOURS:-24}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/output}
+      - OUTPUT_FILENAME=${OUTPUT_FILENAME:-slack-summary.txt}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      - ollama
+    restart: "no"
+    profiles:
+      - legacy  # Only runs when explicitly requested
+
+volumes:
+  ollama_data:
+  redis_data:
+  postgres_data:
+

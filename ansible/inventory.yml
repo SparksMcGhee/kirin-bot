@@ -1,0 +1,13 @@
+---
+# Ansible inventory for Kirin Bot MVP deployment
+# Generated for DJX Spark server
+
+all:
+  children:
+    kirin_servers:
+      hosts:
+        djx-spark:
+          ansible_host: 100.121.81.3
+          ansible_user: sparks
+          ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+          ansible_python_interpreter: /usr/bin/python3
