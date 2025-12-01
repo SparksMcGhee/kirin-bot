@@ -5,6 +5,9 @@ Kirin is a self-hosted content filtering system that uses local LLMs to intellig
 
 It's a 🤖, written by 🤖, to filter out 🤖. Clearly this is the best timeline. 
 
+![dashboard](./pictures/dashbord.png)
+![interests](./pictures/interests.png)
+
 ## Why Kirin? 
 **fights for the user**: You tell Kiran what you care about and Kiran monitors your socials for that. Full stop. No advertisers tipping the scale to sell you shit, no data scientists optimizing feeds for addiction, no evil recomendation algorythm, no enshitification, no phones being blown up at 2am (unless Kirin knows you'd want in on the meme-off).
 
