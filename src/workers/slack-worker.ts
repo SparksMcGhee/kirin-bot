@@ -99,11 +99,14 @@ const slackWorker = new Worker<CollectorJobData, SourceMessage[]>(
           id: `slack-${msg.channel}-${msg.timestamp}`,
           source: 'slack' as const,
           text: msg.text,
-          author: msg.user,
+          author: msg.username || msg.user, // Use resolved username if available
           timestamp: msg.timestamp,
           channelId: msg.channel,
           metadata: {
             threadTs: msg.threadTs,
+            username: msg.username, // Store username in metadata
+            isThreadReply: msg.isThreadReply,
+            replyCount: msg.replyCount,
           },
         }));
 

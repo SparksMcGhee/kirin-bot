@@ -72,6 +72,7 @@ The MVP must demonstrate:
 - **Documentation**: Inline comments for complex logic. JSDoc for public APIs
 - **Testing**: Unit tests for core logic (summarization, message processing). Integration tests for API interactions
 - **Git commits**: Clear, descriptive commit messages. Reference issues when applicable
+- **Change Log**: Agents should document major changes in the /docs/ folder path. No change summaries should be placed in the project root.
 
 # File Structure Requirements
 
@@ -113,18 +114,3 @@ kirin-bot/
 4. **Execution**: Container fetches Slack messages, generates summary via Ollama, writes to text file in `output/` directory, then exits
 5. **Verify**: Check `output/` directory for generated summary text file and container logs
 6. **Re-run**: To generate a new summary, simply run `docker-compose up` again
-
-# Future Considerations (Out of Scope for MVP)
-
-The following features are explicitly out of scope for MVP but should be considered in architecture:
-- Scheduled execution (cron, BullMQ, etc.) - MVP runs once on deploy
-- Multiple social media platform integrations (Reddit, Mastodon, Twitter, etc.)
-- Virtual Android layer for platforms without APIs
-- Web GUI interface or Slack posting - MVP outputs to text file only
-- Database persistence - MVP processes in-memory and outputs to file
-- Job queues (BullMQ, Redis) - Not needed for single-run execution
-- Multi-user support
-- Interest filtering and "Dream System" (focus on summarization only for MVP)
-- Vector embeddings and semantic search
-- User preference management
-

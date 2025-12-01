@@ -357,17 +357,201 @@
             gap: 0.5rem;
             flex-wrap: wrap;
         }
+        
+        .summary-item {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .summary-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .summary-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .summary-text {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .summary-text.expanded {
+            max-height: none;
+        }
+        
+        .raw-messages {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        
+        .raw-messages.expanded {
+            max-height: none;
+        }
+        
+        .message-item {
+            padding: 0.5rem;
+            border-left: 3px solid #667eea;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .message-author {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .message-time {
+            font-size: 0.8rem;
+            color: #999;
+            margin-left: 0.5rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+        
+        .expand-btn:hover {
+            color: #764ba2;
+        }
+        
+        .settings-form {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .settings-form.show {
+            display: block;
+        }
+        
+        .settings-form .form-group {
+            margin-bottom: 0.75rem;
+        }
+        
+        .settings-form label {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .settings-form input,
+        .settings-form select,
+        .settings-form textarea {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+        
+        .settings-form textarea {
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .settings-help {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        .channel-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .channel-tag {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 0.25rem 0.75rem;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .channel-tag .remove-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+        }
+        
+        .add-channel-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .add-channel-form input {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🦄 Kirin Dashboard</h1>
+            <h1>🦒 Kirin Dashboard</h1>
             <p class="subtitle">Self-hosted LLM-powered content filtering</p>
         </header>
         
         <div class="tabs">
             <button class="tab active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="tab" onclick="showTab('summaries')">📝 Summaries</button>
             <button class="tab" onclick="showTab('collectors')">🔧 Collectors</button>
             <button class="tab" onclick="showTab('processor')">⚙️ Processor</button>
             <button class="tab" onclick="showTab('interests')">🎯 Interests</button>
@@ -386,6 +570,10 @@
                     <div class="stat-value" id="stat-jobs">-</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-label">Summaries Generated</div>
+                    <div class="stat-value" id="stat-summaries">-</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-label">Interests</div>
                     <div class="stat-value" id="stat-interests">-</div>
                 </div>
@@ -395,9 +583,57 @@
                 <h2>Quick Actions</h2>
                 <div class="action-buttons">
                     <button onclick="triggerAllCollectors()">▶️ Run All Collectors</button>
+                    <button onclick="showTab('summaries')" class="btn-secondary">📝 View Summaries</button>
                     <button onclick="showTab('processor')" class="btn-secondary">⚙️ Update Prompts</button>
                     <button onclick="showTab('interests')" class="btn-secondary">🎯 Manage Interests</button>
                     <button onclick="location.reload()" class="btn-secondary">🔄 Refresh Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summaries Tab -->
+        <div id="summaries-tab" class="tab-content">
+            <div class="card">
+                <h2>Generated Summaries</h2>
+                <div id="message-summaries" class="message"></div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                    <div class="filters" style="flex: 1; margin-bottom: 0;">
+                        <div class="filter-group">
+                            <label for="filter-source">Filter by Source</label>
+                            <select id="filter-source" onchange="loadSummaries()">
+                                <option value="">All Sources</option>
+                                <option value="slack">Slack</option>
+                                <option value="signal">Signal</option>
+                                <option value="twitter">Twitter</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-limit">Show</label>
+                            <select id="filter-limit" onchange="loadSummaries()">
+                                <option value="10">10 summaries</option>
+                                <option value="20" selected>20 summaries</option>
+                                <option value="50">50 summaries</option>
+                                <option value="100">100 summaries</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="generateNewSummary()" class="btn-success">
+                            🚀 Generate New Summary
+                        </button>
+                        <button onclick="loadSummaries()" class="btn-secondary">
+                            🔄 Refresh List
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="summaries-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading summaries...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -509,6 +745,7 @@
             document.getElementById(tabName + '-tab').classList.add('active');
             
             // Load data for the tab
+            if (tabName === 'summaries') loadSummaries();
             if (tabName === 'collectors') loadCollectors();
             if (tabName === 'processor') loadProcessor();
             if (tabName === 'interests') loadInterests();
@@ -529,29 +766,95 @@
                 const response = await fetch('/api/collectors');
                 const collectors = await response.json();
                 
-                const html = collectors.map(c => `
-                    <div class="collector-item">
-                        <div class="collector-header">
-                            <div>
-                                <div class="collector-name">${c.displayName}</div>
-                                <small>Schedule: ${c.schedulePattern}</small>
+                const html = collectors.map(c => {
+                    const settings = c.settings || {};
+                    const isSlack = c.name === 'slack';
+                    
+                    return `
+                        <div class="collector-item">
+                            <div class="collector-header">
+                                <div>
+                                    <div class="collector-name">${c.displayName}</div>
+                                    <small>Schedule: ${c.schedulePattern}</small>
+                                </div>
+                                <div>
+                                    <span class="badge ${c.enabled ? 'badge-success' : 'badge-danger'}">
+                                        ${c.enabled ? '✓ Enabled' : '✗ Disabled'}
+                                    </span>
+                                </div>
                             </div>
-                            <div>
-                                <span class="badge ${c.enabled ? 'badge-success' : 'badge-danger'}">
-                                    ${c.enabled ? '✓ Enabled' : '✗ Disabled'}
-                                </span>
+                            <div class="action-buttons">
+                                <button onclick="toggleCollector('${c.name}', ${!c.enabled})">
+                                    ${c.enabled ? '⏸️ Disable' : '▶️ Enable'}
+                                </button>
+                                <button onclick="triggerCollector('${c.name}')" class="btn-success" ${!c.enabled ? 'disabled' : ''}>
+                                    🚀 Trigger Now
+                                </button>
+                                <button onclick="toggleSettings('${c.name}')" class="btn-secondary">
+                                    ⚙️ Settings
+                                </button>
+                            </div>
+                            
+                            <!-- Settings Form -->
+                            <div class="settings-form" id="settings-${c.name}">
+                                <h3 style="margin-bottom: 1rem; color: #667eea;">⚙️ ${c.displayName} Settings</h3>
+                                
+                                <form onsubmit="saveCollectorSettings(event, '${c.name}')">
+                                    <div class="form-group">
+                                        <label for="schedule-${c.name}">Schedule Pattern (Cron)</label>
+                                        <input type="text" id="schedule-${c.name}" 
+                                               value="${c.schedulePattern}" required>
+                                        <div class="settings-help">
+                                            Examples: "*/30 * * * *" (every 30 min), "0 */6 * * *" (every 6 hours)
+                                        </div>
+                                    </div>
+                                    
+                                    ${isSlack ? `
+                                        <div class="form-group">
+                                            <label>Slack Channels</label>
+                                            <div class="channel-list" id="channels-${c.name}">
+                                                ${(settings.channelIds || []).map(ch => `
+                                                    <div class="channel-tag">
+                                                        <span>${ch}</span>
+                                                        <button type="button" class="remove-btn" 
+                                                                onclick="removeChannel('${c.name}', '${ch}')">×</button>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            <div class="add-channel-form">
+                                                <input type="text" id="new-channel-${c.name}" 
+                                                       placeholder="Channel ID (e.g., C1234567890)">
+                                                <button type="button" onclick="addChannel('${c.name}')">
+                                                    ➕ Add
+                                                </button>
+                                            </div>
+                                            <div class="settings-help">
+                                                Find channel IDs in Slack: Right-click channel → View channel details → Copy ID
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="lookback-${c.name}">Lookback Hours</label>
+                                            <input type="number" id="lookback-${c.name}" 
+                                                   value="${settings.lookbackHours || 24}" 
+                                                   min="1" max="720" required>
+                                            <div class="settings-help">
+                                                How far back to fetch messages (1-720 hours, max 30 days)
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                        <button type="submit" class="btn-success">💾 Save Settings</button>
+                                        <button type="button" onclick="toggleSettings('${c.name}')" class="btn-secondary">
+                                            ✖️ Cancel
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                        <div class="action-buttons">
-                            <button onclick="toggleCollector('${c.name}', ${!c.enabled})">
-                                ${c.enabled ? '⏸️ Disable' : '▶️ Enable'}
-                            </button>
-                            <button onclick="triggerCollector('${c.name}')" class="btn-success" ${!c.enabled ? 'disabled' : ''}>
-                                🚀 Trigger Now
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 document.getElementById('collectors-list').innerHTML = html;
             } catch (error) {
@@ -571,6 +874,120 @@
                 loadOverview();
             } catch (error) {
                 showMessage('message-collectors', 'Error toggling collector', true);
+            }
+        }
+        
+        // Toggle settings panel
+        function toggleSettings(name) {
+            const element = document.getElementById(`settings-${name}`);
+            element.classList.toggle('show');
+        }
+        
+        // Store current channel lists
+        const collectorChannels = {};
+        
+        // Add channel to collector
+        function addChannel(collectorName) {
+            const input = document.getElementById(`new-channel-${collectorName}`);
+            const channelId = input.value.trim();
+            
+            if (!channelId) {
+                alert('Please enter a channel ID');
+                return;
+            }
+            
+            // Validate channel ID format (starts with C and has more characters)
+            if (!channelId.match(/^[A-Z][A-Z0-9]{8,}$/)) {
+                alert('Invalid channel ID format. Should be like: C1234567890');
+                return;
+            }
+            
+            // Initialize array if needed
+            if (!collectorChannels[collectorName]) {
+                collectorChannels[collectorName] = [];
+            }
+            
+            // Check for duplicates
+            if (collectorChannels[collectorName].includes(channelId)) {
+                alert('Channel already added');
+                return;
+            }
+            
+            // Add to temporary storage
+            collectorChannels[collectorName].push(channelId);
+            
+            // Update display
+            const container = document.getElementById(`channels-${collectorName}`);
+            const tag = document.createElement('div');
+            tag.className = 'channel-tag';
+            tag.innerHTML = `
+                <span>${channelId}</span>
+                <button type="button" class="remove-btn" onclick="removeChannel('${collectorName}', '${channelId}')">×</button>
+            `;
+            container.appendChild(tag);
+            
+            // Clear input
+            input.value = '';
+        }
+        
+        // Remove channel from collector
+        function removeChannel(collectorName, channelId) {
+            if (!confirm(`Remove channel ${channelId}?`)) return;
+            
+            // Remove from temporary storage
+            if (collectorChannels[collectorName]) {
+                collectorChannels[collectorName] = collectorChannels[collectorName].filter(c => c !== channelId);
+            }
+            
+            // Reload to refresh display
+            loadCollectors();
+        }
+        
+        // Save collector settings
+        async function saveCollectorSettings(event, collectorName) {
+            event.preventDefault();
+            
+            const schedulePattern = document.getElementById(`schedule-${collectorName}`).value;
+            const settings = {};
+            
+            // Get Slack-specific settings
+            if (collectorName === 'slack') {
+                const lookbackHours = parseInt(document.getElementById(`lookback-${collectorName}`).value);
+                
+                // Get channel IDs from the display
+                const channelTags = document.querySelectorAll(`#channels-${collectorName} .channel-tag span`);
+                const channelIds = Array.from(channelTags).map(tag => tag.textContent.trim());
+                
+                if (channelIds.length === 0) {
+                    alert('Please add at least one channel');
+                    return;
+                }
+                
+                settings.channelIds = channelIds;
+                settings.lookbackHours = lookbackHours;
+            }
+            
+            try {
+                const response = await fetch(`/api/collectors/${collectorName}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        schedulePattern,
+                        settings
+                    })
+                });
+                
+                if (response.ok) {
+                    showMessage('message-collectors', `✅ ${collectorName} settings saved successfully!`);
+                    toggleSettings(collectorName);
+                    loadCollectors();
+                    loadOverview();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to save settings');
+                }
+            } catch (error) {
+                showMessage('message-collectors', `Error saving settings: ${error.message}`, true);
             }
         }
         
@@ -602,6 +1019,164 @@
             }
             alert(`Triggered ${success} collector(s)`);
             setTimeout(loadQueues, 1000);
+        }
+        
+        // Load summaries
+        async function loadSummaries() {
+            try {
+                const source = document.getElementById('filter-source').value;
+                const limit = document.getElementById('filter-limit').value;
+                
+                let url = `/api/summaries?limit=${limit}`;
+                if (source) url += `&source=${source}`;
+                
+                const response = await fetch(url);
+                const summaries = await response.json();
+                
+                if (summaries.length === 0) {
+                    document.getElementById('summaries-list').innerHTML = '<p style="text-align: center; padding: 2rem; color: #999;">No summaries yet. Trigger a collector to generate some!</p>';
+                    return;
+                }
+                
+                const html = summaries.map(s => {
+                    const date = new Date(s.createdAt);
+                    const formattedDate = date.toLocaleString();
+                    const messageCount = s.messageIds?.length || 0;
+                    
+                    return `
+                        <div class="summary-item">
+                            <div class="summary-header">
+                                <div>
+                                    <span class="badge badge-success">${s.source.toUpperCase()}</span>
+                                    <span style="margin-left: 1rem; color: #999; font-size: 0.9rem;">${formattedDate}</span>
+                                </div>
+                                <div class="summary-meta">
+                                    <span>📨 ${messageCount} messages</span>
+                                    ${s.relevanceScore ? `<span>⭐ ${s.relevanceScore.toFixed(2)}</span>` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="summary-text" id="summary-${s.id}">
+                                ${escapeHtml(s.summary)}
+                            </div>
+                            
+                            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button class="expand-btn" onclick="toggleExpand('summary-${s.id}')">
+                                    📖 Toggle Full Text
+                                </button>
+                                <button class="expand-btn" onclick="toggleRawMessages('${s.id}')">
+                                    💬 Toggle Raw Messages
+                                </button>
+                            </div>
+                            
+                            <div class="raw-messages" id="raw-${s.id}" style="display: none;">
+                                ${(s.rawMessages || []).map(m => `
+                                    <div class="message-item">
+                                        <span class="message-author">${escapeHtml(m.author)}</span>
+                                        <span class="message-time">${new Date(parseInt(m.timestamp) * 1000).toLocaleString()}</span>
+                                        <div style="margin-top: 0.5rem;">${escapeHtml(m.text)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                document.getElementById('summaries-list').innerHTML = html;
+            } catch (error) {
+                document.getElementById('summaries-list').innerHTML = '<p>Error loading summaries</p>';
+                console.error('Error loading summaries:', error);
+            }
+        }
+        
+        // Toggle expand summary text
+        function toggleExpand(id) {
+            const element = document.getElementById(id);
+            element.classList.toggle('expanded');
+        }
+        
+        // Toggle raw messages
+        function toggleRawMessages(id) {
+            const element = document.getElementById('raw-' + id);
+            element.style.display = element.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Generate new summary by triggering all enabled collectors
+        async function generateNewSummary() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Generating...';
+                
+                // Get all enabled collectors
+                const response = await fetch('/api/collectors');
+                const collectors = await response.json();
+                const enabledCollectors = collectors.filter(c => c.enabled);
+                
+                if (enabledCollectors.length === 0) {
+                    showMessage('message-summaries', 'No collectors are enabled. Please enable at least one collector first.', true);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Trigger all enabled collectors
+                let triggered = 0;
+                for (const collector of enabledCollectors) {
+                    try {
+                        await fetch(`/api/collectors/${collector.name}/trigger`, { method: 'POST' });
+                        triggered++;
+                    } catch (error) {
+                        console.error(`Failed to trigger ${collector.name}:`, error);
+                    }
+                }
+                
+                if (triggered === 0) {
+                    showMessage('message-summaries', 'Failed to trigger any collectors', true);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Show progress message
+                showMessage('message-summaries', `✅ Triggered ${triggered} collector(s). Processing may take 30-60 seconds...`);
+                
+                // Update button to show it's processing
+                btn.innerHTML = '⏳ Processing (30s)...';
+                
+                // Wait for processing (30 seconds) then refresh
+                await new Promise(resolve => setTimeout(resolve, 30000));
+                
+                // Refresh summaries list
+                await loadSummaries();
+                
+                // Check if new summaries were generated
+                const newSummaries = await fetch('/api/summaries?limit=5').then(r => r.json());
+                const recentSummary = newSummaries[0];
+                const isRecent = recentSummary && 
+                    (new Date() - new Date(recentSummary.createdAt)) < 60000; // Within last minute
+                
+                if (isRecent) {
+                    showMessage('message-summaries', `🎉 New summary generated successfully! (${recentSummary.messageIds.length} messages processed)`);
+                } else {
+                    showMessage('message-summaries', '⚠️ No new messages found to summarize. Try again later or check your collector settings.');
+                }
+                
+            } catch (error) {
+                showMessage('message-summaries', 'Error generating summary: ' + error.message, true);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
         
         // Load processor config
@@ -747,10 +1322,11 @@
         // Load overview stats
         async function loadOverview() {
             try {
-                const [collectors, interests, queues] = await Promise.all([
+                const [collectors, interests, queues, summaries] = await Promise.all([
                     fetch('/api/collectors').then(r => r.json()),
                     fetch('/api/interests').then(r => r.json()),
-                    fetch('/api/queues').then(r => r.json())
+                    fetch('/api/queues').then(r => r.json()),
+                    fetch('/api/summaries?limit=1000').then(r => r.json())
                 ]);
                 
                 document.getElementById('stat-collectors').textContent = 
@@ -759,6 +1335,8 @@
                     interests.length;
                 document.getElementById('stat-jobs').textContent = 
                     queues.queues.reduce((sum, q) => sum + q.total, 0);
+                document.getElementById('stat-summaries').textContent = 
+                    summaries.length;
             } catch (error) {
                 console.error('Error loading overview:', error);
             }

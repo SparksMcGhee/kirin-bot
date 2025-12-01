@@ -1,4 +1,4 @@
-# 🦄 Kirin v0.2.0 - BullMQ Architecture Deployment
+# 🦒 Kirin v0.2.0 - BullMQ Architecture Deployment
 
 ## Deployment Summary
 

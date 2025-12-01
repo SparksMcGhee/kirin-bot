@@ -411,7 +411,7 @@ app.get('/api/audit', async (req, res) => {
 // ============================================
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`🦄 Kirin Dashboard running on port ${port}`);
+  console.log(`🦒 Kirin Dashboard running on port ${port}`);
   console.log(`📊 Queue Monitor: http://localhost:${port}/api/queues`);
   console.log(`🔧 Collectors API: http://localhost:${port}/api/collectors`);
   console.log(`⚙️ Processor API: http://localhost:${port}/api/processor/config`);

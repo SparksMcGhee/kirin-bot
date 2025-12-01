@@ -100,19 +100,4 @@ cd ansible
 ### Monitoring
 - Container logs: `docker logs -f kirin-bot-mvp`
 - Ollama logs: `docker logs -f kirin-ollama`
-- Summary output: `cat /opt/kirin-bot//output/slack-summary.txt`
-
-## MVP Limitations
-
-This MVP is intentionally limited to:
-- ✅ Single-run execution (no scheduling)
-- ✅ Text file output only
-- ✅ Slack integration only
-- ✅ Single user deployment
-- ❌ No web UI
-- ❌ No database persistence
-- ❌ No continuous monitoring
-- ❌ No Slack posting capabilities
-
-For production use, consider implementing scheduling (cron), web interface, and database persistence.
-
+- Summary output: `cat /opt/kirin-bot//output/slack-summary.txt

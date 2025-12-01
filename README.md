@@ -1,30 +1,38 @@
-# 🦄 Kirin - Self-Hosted LLM Content Filter
+# 🦒 Kirin - Self-Hosted LLM Content Filter
 
-**Version 0.2.0** - Production-Ready Job Queue Architecture
+**Version 0.2.0** - Job Queue Architecture with Web Dashboard
 
 Kirin is a self-hosted content filtering system that uses local LLMs to intelligently process and summarize information from multiple sources (Slack, Signal, Twitter, RSS feeds, etc.).
 
 ## 🏗️ Architecture
 
-Built on a modern job queue system with modular workers:
+### Core Components
 
-- **BullMQ** - Distributed task processing with Redis
+- **BullMQ Job Queue** - Distributed task processing with Redis backend
+- **Collector Workers** - Modular data collectors (Slack, Signal, Twitter, RSS)
+- **Processor Worker** - LLM-powered content analysis and filtering
+- **Output Worker** - Storage and export of filtered results
+- **Web Dashboard** - Real-time monitoring with Bull Board integration
 - **PostgreSQL + pgvector** - Vector database for embeddings
-- **Prisma ORM** - Type-safe database access & migrations
 - **Ollama** - Self-hosted LLM inference
-- **Express Dashboard** - Web-based monitoring (port 666) with REST API
-- **Modular Workers** - Slack, Signal, Twitter collectors
 
-### Database Configuration System
+### Data Flow
 
-All settings are now stored in PostgreSQL and manageable via REST API:
-- ✅ Collector configurations (schedule, rate limits, source settings)
-- ✅ Processor settings (LLM model, prompts, parameters)
-- ✅ User interests and preferences
-- ✅ Job history and audit logs
-- ✅ No redeployment needed for configuration changes
-
-See [Database Configuration Guide](docs/DATABASE_CONFIGURATION.md) for details.
+```
+┌──────────────┐
+│  Collectors  │  ──→  Fetch messages from sources
+└──────┬───────┘
+       │
+       ↓ (BullMQ)
+┌──────────────┐
+│  Processor   │  ──→  LLM analysis & filtering
+└──────┬───────┘
+       │
+       ↓ (BullMQ)
+┌──────────────┐
+│    Output    │  ──→  Store results & metadata
+└──────────────┘
+```
 
 ## 🚀 Quick Start
 
@@ -33,45 +41,104 @@ See [Database Configuration Guide](docs/DATABASE_CONFIGURATION.md) for details.
 - Docker & Docker Compose
 - Ansible (for deployment)
 - SSH access to your target server
-- Slack Bot Token (for Slack integration)
 
-### 1. Clone and Configure
+### Local Development
 
+1. **Clone and configure**:
 ```bash
-cd kirin-bot
+cd mvp
 cp .env_example .env
-# Edit .env with your Slack token and configuration
+# Edit .env with your configuration
 ```
 
-### 2. Configure Environment Variables
-
-Edit `.env` file with your settings:
-
-```env
-SLACK_BOT_TOKEN=xoxb-your-token-here
-SLACK_CHANNEL_IDS=C1234567890,C0987654321
-SLACK_LOOKBACK_HOURS=24
-
-OLLAMA_BASE_URL=http://ollama:11434
-OLLAMA_MODEL=qwen2.5:32b
-
-REDIS_URL=redis://redis:6379
-DATABASE_URL=postgresql://kirin:password@postgres:5432/kirin
-
-DASHBOARD_PORT=666
-```
-
-### 3. Run with Docker Compose
-
+2. **Start all services**:
 ```bash
 docker-compose up -d
 ```
 
-### 4. Access Dashboard
+3. **Access the dashboard**:
+```
+http://localhost:666
+```
 
-Visit `http://localhost:666` to view the dashboard and monitor queue status.
+## 📊 Dashboard
 
-## 📦 Deployment
+The Kirin dashboard provides:
+- **Queue Monitor** (`/api/queues`) - Real-time BullMQ job monitoring
+- **Job Status** - View active, completed, and failed jobs
+- **Worker Health** - Monitor collector and processor workers
+- **Output Review** - Browse filtered content and provide feedback
+
+Default port: **666** (configurable via `DASHBOARD_PORT`)
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# Slack Configuration
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_CHANNEL_IDS=C123456,C789012
+SLACK_LOOKBACK_HOURS=24
+
+# Ollama LLM
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=qwen2.5:32b
+
+# Redis (Job Queue)
+REDIS_URL=redis://redis:6379
+
+# PostgreSQL (Vector DB)
+DATABASE_URL=postgresql://kirin:password@postgres:5432/kirin
+
+# Dashboard
+DASHBOARD_PORT=666
+
+# Logging
+LOG_LEVEL=info
+```
+
+## 📦 Services
+
+### Collector Workers
+
+Modular collectors run as independent workers:
+
+- **Slack Collector** - Fetches messages from Slack channels
+- **Signal Collector** (TODO) - Fetches Signal messages
+- **Twitter Collector** (TODO) - Fetches tweets
+
+Each collector:
+- Runs on a schedule (cron-like)
+- Respects source API rate limits
+- Queues messages for processing
+
+### Processor Worker
+
+The processor worker:
+- Receives messages from collectors
+- Sends to LLM for analysis/summarization
+- Extracts topics and relevance scores
+- Queues filtered output for storage
+
+### Output Worker
+
+The output worker:
+- Stores filtered content to files
+- Saves metadata to PostgreSQL
+- Maintains "latest" files per source
+
+## 🎯 Adding New Collectors
+
+To add a new source:
+
+1. Create `services/collectors/[source]/Dockerfile`
+2. Implement worker in `src/workers/[source]-worker.ts`
+3. Add queue in `src/queue/queues.ts`
+4. Update `docker-compose.yml`
+5. Add to dashboard in `services/dashboard/src/lib/bullBoard.ts`
+
+## 🚢 Deployment
 
 ### Deploy to Server
 
@@ -94,149 +161,125 @@ cd scripts
 ./verify-deployment.sh
 ```
 
-## 📊 Monitoring
+## 🧪 Testing
 
-- **Dashboard**: `http://your-server:666`
-- **Queue Stats API**: `http://your-server:666/api/queues`
-- **Health Check**: `http://your-server:666/api/health`
-
-View worker logs:
 ```bash
+# Run tests (TODO)
+npm test
+
+# Check queue status
+docker exec -it kirin-redis redis-cli
+> KEYS bull:*
+
+# View worker logs
 docker logs kirin-collector-slack -f
 docker logs kirin-processor -f
 docker logs kirin-output -f
 ```
 
-## 🔧 Configuration
+## 📈 Monitoring
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SLACK_BOT_TOKEN` | Slack Bot User OAuth Token | Required |
-| `SLACK_CHANNEL_IDS` | Comma-separated channel IDs | Required |
-| `SLACK_LOOKBACK_HOURS` | Hours of history to fetch | `24` |
-| `OLLAMA_BASE_URL` | Ollama API endpoint | `http://ollama:11434` |
-| `OLLAMA_MODEL` | LLM model to use | `qwen2.5:32b` |
-| `REDIS_URL` | Redis connection string | `redis://redis:6379` |
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://kirin:password@postgres:5432/kirin` |
-| `DASHBOARD_PORT` | Dashboard web port | `666` |
-| `OUTPUT_DIR` | Directory for summary files | `/app/output` |
-| `LOG_LEVEL` | Logging verbosity | `info` |
+### Queue Metrics
 
-## 🎯 Recommended LLM Models
+Access Bull Board at `http://your-server:666/api/queues` to see:
+- Job counts (waiting, active, completed, failed)
+- Processing times
+- Retry attempts
+- Error logs
 
-With high memory capacity, you can run larger models:
+### Worker Status
 
-**Recommended for summarization:**
-- `qwen2.5:32b` - Excellent quality, ~18GB VRAM (default)
-- `llama3.1:70b` - Maximum quality, ~40GB VRAM
-- `llama3.1:8b` - Fast and efficient, ~4.7GB VRAM
+```bash
+# Check all containers
+docker ps
 
-**Smaller/faster options:**
-- `llama3.2:3b` - Good quality, very fast, ~2GB VRAM
-- `mistral:7b` - Great alternative, ~4.1GB VRAM
-
-## 📚 Documentation
-
-- [Full Architecture Guide](README_v2.md) - Detailed architecture and design
-- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) - Step-by-step deployment
-- [Deployment Success Report](DEPLOYMENT_SUCCESS_v0.2.0.md) - Latest deployment details
-- [Change Log](CHANGES.md) - Version history
-- [LangChain Integration Plan](docs/LANGCHAIN_INTEGRATION.md) - Future enhancements
-
-## 🏗️ Project Structure
-
-```
-kirin-bot/
-├── src/              # TypeScript source code
-│   ├── queue/        # BullMQ queue definitions
-│   ├── workers/      # Collector, processor, output workers
-│   ├── slack/        # Slack API client
-│   ├── models/       # LLM clients (Ollama)
-│   └── utils/        # Logger, helpers
-├── services/         # Docker service definitions
-│   ├── collectors/   # Collector Dockerfiles
-│   ├── processor/    # Processor Dockerfile
-│   ├── output/       # Output Dockerfile
-│   └── dashboard/    # Express dashboard
-├── ansible/          # Deployment automation
-└── docker-compose.yml # Service orchestration
+# View specific worker logs
+docker logs kirin-collector-slack
+docker logs kirin-processor
+docker logs kirin-output
 ```
 
 ## 🔮 Roadmap
 
 ### v0.3.0 - LangChain Integration
-- RAG with pgvector
-- Prompt versioning
-- Topic extraction
-- Relevance scoring
+- [ ] RAG with pgvector
+- [ ] Prompt versioning
+- [ ] Topic extraction
+- [ ] Relevance scoring
 
 ### v0.4.0 - Multi-User Support
-- User authentication
-- Per-user filtering preferences
-- Feedback loops
+- [ ] User authentication
+- [ ] Per-user filtering preferences
+- [ ] Feedback loops for relevance tuning
 
 ### v0.5.0 - Additional Sources
-- Signal collector
-- Twitter/X collector
-- RSS feed collector
+- [ ] Signal collector
+- [ ] Twitter/X collector
+- [ ] RSS feed collector
+- [ ] Email collector
+
+## 📝 Architecture Notes
+
+### Why BullMQ?
+
+- **Reliability**: At-least-once delivery with Redis persistence
+- **Scalability**: Horizontal scaling of workers
+- **Observability**: Built-in metrics and Bull Board UI
+- **Rate Limiting**: Respect API limits per collector
+- **Retries**: Automatic retry with exponential backoff
+
+### Why Next.js for Dashboard?
+
+- **Modern**: React with server components
+- **Fast**: Optimized builds and caching
+- **Integrated**: Bull Board adaptor for queue UI
+- **Extensible**: Easy to add custom dashboard pages
+
+### Why PostgreSQL + pgvector?
+
+- **Vectors**: Native support for embeddings (future RAG)
+- **Relational**: Structured metadata storage
+- **Performant**: Efficient queries with indexes
+- **Proven**: Battle-tested reliability
 
 ## 🛠️ Development
 
-### Local Setup
+### Project Structure
 
-```bash
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Run specific workers
-npm run worker:slack
+```
+/
+├── src/
+│   ├── queue/           # BullMQ queue definitions
+│   ├── workers/         # Collector, processor, output workers
+│   ├── slack/           # Slack API client
+│   ├── models/          # LLM clients
+│   ├── summarization/   # Summarization logic
+│   ├── output/          # File output handlers
+│   └── utils/           # Logger, helpers
+├── services/
+│   ├── collectors/      # Collector Dockerfiles
+│   ├── processor/       # Processor Dockerfile
+│   ├── output/          # Output Dockerfile
+│   └── dashboard/       # Next.js dashboard
+├── ansible/             # Deployment automation
+└── docker-compose.yml   # Service orchestration
 ```
 
-### Project Commands
+## 📚 Documentation
 
-```bash
-npm run build      # Build TypeScript
-npm run dev        # Run in development mode
-npm start          # Run main app (legacy)
-npm run lint       # Lint code
-```
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md)
+- [LangChain Integration Plan](docs/LANGCHAIN_INTEGRATION.md)
+- [Change Log](CHANGES.md)
 
-## 🔍 Troubleshooting
+## 🤝 Contributing
 
-### Common Issues
-
-1. **"not_in_channel" error**
-   - Invite your bot to the Slack channels
-
-2. **Ollama connection errors**
-   - Verify Ollama is running: `docker logs kirin-ollama`
-
-3. **Queue not processing**
-   - Check Redis: `docker logs kirin-redis`
-   - Check worker logs: `docker logs kirin-collector-slack`
-
-### View All Logs
-
-```bash
-docker-compose logs -f
-```
-
-## 🔒 Security
-
-- **Slack Token**: Keep `.env` secure and never commit it
-- **Local Processing**: All LLM processing happens locally
-- **No Cloud**: No data leaves your infrastructure
-- **Network Isolation**: Services communicate via Docker network
+This is a personal project, but feedback and suggestions are welcome!
 
 ## 📄 License
 
-MIT - See [LICENSE](LICENSE) for details
+MIT
 
 ---
 
-**Built for filtering signal from noise** 🦄
+**Built with ❤️ for filtering signal from noise**
 
-*Dashboard: http://your-server:666*

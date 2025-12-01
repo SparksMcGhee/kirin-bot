@@ -4,9 +4,11 @@ import { Logger } from '../utils/logger';
 interface Message {
   text: string;
   user: string;
+  username?: string;
   timestamp: string;
   channel?: string;
   threadTs?: string;
+  isThreadReply?: boolean;
 }
 
 export class Summarizer {

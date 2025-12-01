@@ -8,7 +8,7 @@ export default function Home() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold text-white mb-4">
-              🦄 Kirin
+              🦒 Kirin
             </h1>
             <p className="text-xl text-purple-200">
               Self-hosted LLM-powered content filtering with job queue architecture

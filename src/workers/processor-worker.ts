@@ -3,6 +3,7 @@ import { Summarizer } from '../summarization/summarizer';
 import { Logger } from '../utils/logger';
 import { ProcessingJobData, FilteredOutput } from '../queue/types';
 import { outputQueue } from '../queue/queues';
+import { db } from '../utils/prisma';
 
 const logger = new Logger(process.env.LOG_LEVEL || 'info');
 
@@ -27,8 +28,10 @@ const processorWorker = new Worker<ProcessingJobData, FilteredOutput>(
       const slackMessages = job.data.messages.map((msg) => ({
         text: msg.text,
         user: msg.author,
+        username: (msg.metadata as any)?.username, // Pass through resolved username
         timestamp: msg.timestamp,
         channel: msg.channelId,
+        isThreadReply: (msg.metadata as any)?.isThreadReply,
       }));
 
       await job.updateProgress(30);
@@ -50,8 +53,26 @@ const processorWorker = new Worker<ProcessingJobData, FilteredOutput>(
         userId: job.data.userId,
       };
 
-      // Queue output for storage and user review
-      await outputQueue.add('store-output', output);
+      // Save summary to database
+      const summaryRecord = await db.summary.create({
+        data: {
+          source: job.data.source,
+          summary: summary,
+          rawMessages: job.data.messages as any, // Cast to any for JSON compatibility
+          messageIds: job.data.messages.map(msg => msg.id),
+          userId: job.data.userId,
+          topics: [], // TODO: Implement topic extraction
+          relevanceScore: 0.8, // TODO: Implement relevance scoring
+        },
+      });
+
+      logger.info(`[Processor] Saved summary to database with ID: ${summaryRecord.id}`);
+
+      // Queue output for file storage
+      await outputQueue.add('store-output', {
+        ...output,
+        summaryId: summaryRecord.id,
+      });
 
       await job.updateProgress(100);
       logger.info(`[Processor] Completed processing for ${job.data.source}`);

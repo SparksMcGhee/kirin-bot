@@ -17,7 +17,13 @@ export class OllamaClient implements LLMClient {
     this.logger = logger;
   }
 
-  async summarize(messages: Array<{ text: string; user: string; timestamp: string }>): Promise<string> {
+  async summarize(messages: Array<{ 
+    text: string; 
+    user: string; 
+    username?: string;
+    timestamp: string;
+    isThreadReply?: boolean;
+  }>): Promise<string> {
     const prompt = this.buildPrompt(messages);
 
     this.logger.debug(`Sending request to Ollama: ${this.baseUrl}/api/generate`);
@@ -77,11 +83,19 @@ export class OllamaClient implements LLMClient {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private buildPrompt(messages: Array<{ text: string; user: string; timestamp: string }>): string {
+  private buildPrompt(messages: Array<{ 
+    text: string; 
+    user: string;
+    username?: string;
+    timestamp: string;
+    isThreadReply?: boolean;
+  }>): string {
     const messagesText = messages
       .map((msg) => {
         const date = new Date(parseFloat(msg.timestamp) * 1000).toISOString();
-        return `[${date}] ${msg.user}: ${msg.text}`;
+        const displayName = msg.username || msg.user;
+        const prefix = msg.isThreadReply ? '  ↳ ' : '';  // Indent thread replies
+        return `${prefix}[${date}] ${displayName}: ${msg.text}`;
       })
       .join('\n');
 
@@ -92,10 +106,11 @@ Please provide a concise summary of the following conversation, highlighting:
 - Any questions that need answers
 - User loves turkey
 
+Note: Messages indented with "↳" are replies within conversation threads.
+
 Conversation:
 ${messagesText}
 
 Summary:`;
   }
 }
-
