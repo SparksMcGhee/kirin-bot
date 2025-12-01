@@ -1,8 +1,30 @@
-# 🦒 Kirin - Self-Hosted LLM Content Filter
-
-**Version 0.2.0** - Job Queue Architecture with Web Dashboard
+# 🦒 Kirin - Ad-block for the post-human internet
+(Kirin means 🦒 in Japanese!)
 
 Kirin is a self-hosted content filtering system that uses local LLMs to intelligently process and summarize information from multiple sources (Slack, Signal, Twitter, RSS feeds, etc.).
+
+It's a 🤖, written by 🤖, to filter out 🤖. Clearly this is the best timeline. 
+
+## Why Kirin? 
+**fights for the user**: You tell Kiran what you care about and Kiran monitors your socials for that. Full stop. No advertisers tipping the scale to sell you shit, no data scientists optimizing feeds for addiction, no evil recomendation algorythm, no enshitification, no phones being blown up at 2am (unless Kirin knows you'd want in on the meme-off).
+
+**Only watches**: It will never spam or bother your friends, humiliate you, or otherwise contribute to the Dead-Internet problems it exists to solve. At-most it will reach out to you privately when it thinks you should know something. 
+
+**Own your data**: It is designed to run entirely on self-hosted equipment. All data it collects never leaves your direct ownership and soverenty. Everything you feed Kiran is still yours!
+
+## Why do you need 🦒?
+
+For most of human history the biggest challenge we faced was getting enough food. We wired ourselves to consume all the greese, salt, carbs, and sugar we could cram into our mouths so we had something to survive on during the hard times. 
+
+Then, in an evolutionary blink of the eye the hard times ended. Developed nations didn't just have enough food, we had too much food. Suddenly the biggest killer and threat to our wellbeing wasn't starving, it was obesity, diabetes, and heart problems... suddenly success wasn't eating enough, it was eating right. 
+
+It took us years of experimenting with scientific reserch, fad diets, public education campaigns, regulation, and finally GLP-1 drugs to functionally patch our brain's wiring for the new era.
+
+Our natural curiosity and need for knowledge and closeness is in many ways just like hunger. Knowledge and social closeness increases our evolutionary advantage and for most of human history we were starving and scratching for every tidbit. 
+
+Then, in an evolutionary blink of the eye the whole game changed. Suddenly the Internet allowed us to hook a firehose of all humanitites knowledge and every banial thought and infinite volume of empty mental junkfood directly up to our eyeballs 24/7/365. Suddenly becoming wise, informed, and healthy means consuming the right information. 
+
+Since Facebook, Twitter, Bluesky, Mastadon, RSS feeds, Slack, Discord, IRC, SMS, Signal, Telegram, WeChat, Email.... all of them, seem intent on blasting your eyeballs with infinite volumes of ever-enshittifying garbage Kirin exists to be your filter. You can eat your metaphorical information-burger but leave as much fat and salt as you want on the table! 
 
 ## 🏗️ Architecture
 
@@ -32,33 +54,6 @@ Kirin is a self-hosted content filtering system that uses local LLMs to intellig
 ┌──────────────┐
 │    Output    │  ──→  Store results & metadata
 └──────────────┘
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker & Docker Compose
-- Ansible (for deployment)
-- SSH access to your target server
-
-### Local Development
-
-1. **Clone and configure**:
-```bash
-cd mvp
-cp .env_example .env
-# Edit .env with your configuration
-```
-
-2. **Start all services**:
-```bash
-docker-compose up -d
-```
-
-3. **Access the dashboard**:
-```
-http://localhost:666
 ```
 
 ## 📊 Dashboard
@@ -199,25 +194,6 @@ docker logs kirin-processor
 docker logs kirin-output
 ```
 
-## 🔮 Roadmap
-
-### v0.3.0 - LangChain Integration
-- [ ] RAG with pgvector
-- [ ] Prompt versioning
-- [ ] Topic extraction
-- [ ] Relevance scoring
-
-### v0.4.0 - Multi-User Support
-- [ ] User authentication
-- [ ] Per-user filtering preferences
-- [ ] Feedback loops for relevance tuning
-
-### v0.5.0 - Additional Sources
-- [ ] Signal collector
-- [ ] Twitter/X collector
-- [ ] RSS feed collector
-- [ ] Email collector
-
 ## 📝 Architecture Notes
 
 ### Why BullMQ?
@@ -273,7 +249,7 @@ docker logs kirin-output
 
 ## 🤝 Contributing
 
-This is a personal project, but feedback and suggestions are welcome!
+Yes please! 
 
 ## 📄 License
 
@@ -281,5 +257,5 @@ MIT
 
 ---
 
-**Built with ❤️ for filtering signal from noise**
+**🤖 responsibly,  my friends**
 
