@@ -1,4 +1,5 @@
 import { OllamaClient } from '../models/ollama-client';
+import { SummarizeContext } from '../models/llm-client';
 import { Logger } from '../utils/logger';
 
 interface Message {
@@ -20,7 +21,7 @@ export class Summarizer {
     this.logger = logger;
   }
 
-  async summarize(messages: Message[]): Promise<string> {
+  async summarize(messages: Message[], context?: SummarizeContext): Promise<string> {
     this.logger.info(`Summarizing ${messages.length} messages`);
 
     if (messages.length === 0) {
@@ -30,7 +31,7 @@ export class Summarizer {
     try {
       // Use Ollama directly for now
       // TODO: Implement LangChain.js for advanced RAG and prompt management
-      const summary = await this.llmClient.summarize(messages);
+      const summary = await this.llmClient.summarize(messages, context);
       return summary;
     } catch (error) {
       this.logger.error('Error generating summary:', error);

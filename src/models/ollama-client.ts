@@ -1,4 +1,4 @@
-import { LLMClient } from './llm-client';
+import { LLMClient, SummarizeContext } from './llm-client';
 import { Logger } from '../utils/logger';
 
 interface OllamaResponse {
@@ -17,14 +17,17 @@ export class OllamaClient implements LLMClient {
     this.logger = logger;
   }
 
-  async summarize(messages: Array<{ 
-    text: string; 
-    user: string; 
-    username?: string;
-    timestamp: string;
-    isThreadReply?: boolean;
-  }>): Promise<string> {
-    const prompt = this.buildPrompt(messages);
+  async summarize(
+    messages: Array<{ 
+      text: string; 
+      user: string; 
+      username?: string;
+      timestamp: string;
+      isThreadReply?: boolean;
+    }>,
+    context?: SummarizeContext
+  ): Promise<string> {
+    const prompt = this.buildPrompt(messages, context);
 
     this.logger.debug(`Sending request to Ollama: ${this.baseUrl}/api/generate`);
     this.logger.debug(`Model: ${this.model}`);
@@ -83,13 +86,16 @@ export class OllamaClient implements LLMClient {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private buildPrompt(messages: Array<{ 
-    text: string; 
-    user: string;
-    username?: string;
-    timestamp: string;
-    isThreadReply?: boolean;
-  }>): string {
+  private buildPrompt(
+    messages: Array<{ 
+      text: string; 
+      user: string;
+      username?: string;
+      timestamp: string;
+      isThreadReply?: boolean;
+    }>,
+    context?: SummarizeContext
+  ): string {
     const messagesText = messages
       .map((msg) => {
         const date = new Date(parseFloat(msg.timestamp) * 1000).toISOString();
@@ -99,12 +105,18 @@ export class OllamaClient implements LLMClient {
       })
       .join('\n');
 
-    return `You are a helpful assistant that summarizes Slack conversations. 
+    // Use provided context or fall back to default prompt
+    const defaultSystemPrompt = `You are a helpful assistant that summarizes conversations.
 Please provide a concise summary of the following conversation, highlighting:
 - Key topics discussed
 - Important decisions or action items
-- Any questions that need answers
-- User loves turkey
+- Any questions that need answers`;
+
+    const systemPrompt = context?.systemPrompt || defaultSystemPrompt;
+    const sourcePrompt = context?.sourcePrompt ? `\n\n${context.sourcePrompt}` : '';
+    const interestPrompt = context?.interestPrompt ? `\n\n${context.interestPrompt}` : '';
+
+    return `${systemPrompt}${sourcePrompt}${interestPrompt}
 
 Note: Messages indented with "↳" are replies within conversation threads.
 
