@@ -1,5 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { Summarizer } from '../summarization/summarizer';
+import { SummarizeContext } from '../models/llm-client';
 import { Logger } from '../utils/logger';
 import { ProcessingJobData, FilteredOutput } from '../queue/types';
 import { outputQueue } from '../queue/queues';
@@ -12,6 +13,18 @@ const redisConnection = {
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
 };
 
+/**
+ * Build interest prompt from user's active interests
+ */
+function buildInterestPrompt(interests: Array<{ keyword: string; weight: number }>): string {
+  if (interests.length === 0) {
+    return '';
+  }
+  
+  const interestLines = interests.map(i => `- ${i.keyword} (priority: ${i.weight})`);
+  return `The user is especially interested in the following topics. Please highlight any content related to these interests:\n${interestLines.join('\n')}`;
+}
+
 // Processing worker
 const processorWorker = new Worker<ProcessingJobData, FilteredOutput>(
   'kirin-processor',
@@ -19,10 +32,56 @@ const processorWorker = new Worker<ProcessingJobData, FilteredOutput>(
     logger.info(`[Processor] Processing ${job.data.messages.length} messages from ${job.data.source}`);
 
     try {
-      const ollamaUrl = process.env.OLLAMA_BASE_URL || 'http://ollama:11434';
-      const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:8b';
+      await job.updateProgress(5);
+
+      // Load processor configuration from database
+      const processorConfig = await db.processorConfig.findUnique({
+        where: { name: 'default' },
+      });
+
+      // Use config from DB or fall back to environment variables
+      const ollamaUrl = processorConfig?.ollamaUrl || process.env.OLLAMA_BASE_URL || 'http://ollama:11434';
+      const ollamaModel = processorConfig?.ollamaModel || process.env.OLLAMA_MODEL || 'llama3.1:8b';
+
+      logger.info(`[Processor] Using model: ${ollamaModel} at ${ollamaUrl}`);
 
       await job.updateProgress(10);
+
+      // Load user profile and interests from database
+      // Note: job.data.userId is currently the username ('default'), not the UUID
+      // We look up by username for now until the slack-worker is updated to pass the UUID
+      const userProfile = await db.userProfile.findUnique({
+        where: { username: job.data.userId },
+        include: {
+          interests: {
+            where: { isActive: true },
+            orderBy: { weight: 'desc' },
+          },
+        },
+      });
+
+      // Build the summarization context from DB config and user interests
+      const interestPrompt = userProfile?.interests 
+        ? buildInterestPrompt(userProfile.interests)
+        : '';
+
+      // Get source-specific prompt if available
+      const userPrompts = processorConfig?.userPrompts as Record<string, string> | null;
+      const sourcePrompt = userPrompts?.[job.data.source] || '';
+
+      const summarizeContext: SummarizeContext = {
+        systemPrompt: processorConfig?.systemPrompt || '',
+        sourcePrompt,
+        interestPrompt,
+      };
+
+      if (userProfile?.interests?.length) {
+        logger.info(`[Processor] Loaded ${userProfile.interests.length} interests for user ${job.data.userId}`);
+      } else {
+        logger.info(`[Processor] No interests found for user ${job.data.userId}`);
+      }
+
+      await job.updateProgress(15);
 
       // Convert messages to format expected by Summarizer
       const slackMessages = job.data.messages.map((msg) => ({
@@ -36,9 +95,9 @@ const processorWorker = new Worker<ProcessingJobData, FilteredOutput>(
 
       await job.updateProgress(30);
 
-      // Generate summary
+      // Generate summary with context (interests + system prompt from DB)
       const summarizer = new Summarizer(ollamaUrl, ollamaModel, logger);
-      const summary = await summarizer.summarize(slackMessages);
+      const summary = await summarizer.summarize(slackMessages, summarizeContext);
 
       await job.updateProgress(80);
 
